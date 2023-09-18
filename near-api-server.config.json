@@ -1,1 +1,1 @@
-{"server_host":"localhost","server_port":3001,"rpc_node":"https://rpc.testnet.near.org","master_account_id":"xrvikash.testnet","master_key":"ed25519:bvP64gYP8dSqwPRUvFH7imyZM447FFUbxHDdtfedFr7S2tQ9Wtep3jf1r3q9GV7v3mbSiywdzzw2ZWYF3d7MVzp","nft_contract":"nft-contract.example.testnet"}
+{"server_host":"localhost","server_port":3001,"rpc_node":"https://rpc.testnet.near.org","master_account_id":"xrvikash.testnet"}
