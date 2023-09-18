@@ -129,6 +129,22 @@ module.exports = {
         }
     },
 
+    SendNear: async function (account_id, private_key, receiver, amount ) {
+        try {
+           
+            const account = await this.GetAccountByKey(account_id, private_key);
+
+
+            amount = nearApi.utils.format.parseNearAmount(amount);
+            
+            let result = await account.sendMoney(receiver, amount);
+
+            return result;
+        } catch (e) {
+            return api.reject(e);
+        }
+    },
+
     Call: async function (account_id, private_key, attached_tokens, attached_gas, recipient, method, params, network, rpc_node, headers) {
         try {
             const account = await this.GetAccountByKey(account_id, private_key, network, rpc_node, headers);

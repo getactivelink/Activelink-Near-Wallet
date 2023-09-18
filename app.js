@@ -260,6 +260,25 @@ const init = async () => {
     });
 
     server.route({
+        
+        method: 'POST',
+        // path: '/create_user/{name}',
+        path: '/send_near',
+        handler: async (request) => {
+            //console.log(request) 
+
+            request = processRequest(request);
+
+            let {account_id, private_key, seed_phrase, receiver, amount} = request.payload;
+
+            if (seed_phrase)
+                private_key = (await user.GetKeysFromSeedPhrase(seed_phrase)).secretKey;
+
+            return await blockchain.SendNear(account_id, private_key, receiver, amount);
+        },
+    });
+
+    server.route({
         method: 'POST',
         path: '/parse_seed_phrase',
         handler: async (request) => {
