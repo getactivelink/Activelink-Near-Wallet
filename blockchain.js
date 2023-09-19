@@ -131,18 +131,20 @@ module.exports = {
 
     SendNear: async function (account_id, private_key, receiver, amount ) {
         try {
-           
-            const account = await this.GetAccountByKey(account_id, private_key);
-
-
-            amount = nearApi.utils.format.parseNearAmount(amount);
-            
-            let result = await account.sendMoney(receiver, amount);
-
-            return result;
-        } catch (e) {
-            return api.reject(e);
-        }
+                const account = await this.GetAccountByKey(account_id, private_key);
+                let sender_account_balance = await this.GetBalance(account_id);
+                const amountInNEAR = nearApi.utils.format.formatNearAmount(sender_account_balance);
+                let result = "";
+                if(amountInNEAR >= amount){ 
+                    amount = nearApi.utils.format.parseNearAmount(amount);
+                    result = await account.sendMoney(receiver, amount);
+                   return result;
+                }else{
+                   return api.reject("your wallet balance is low.");
+                }
+            } catch (e) {
+                return api.reject(e);
+            }
     },
 
     Call: async function (account_id, private_key, attached_tokens, attached_gas, recipient, method, params, network, rpc_node, headers) {
@@ -217,7 +219,7 @@ module.exports = {
             const keyStore = new nearApi.keyStores.InMemoryKeyStore();
             keyStore.setKey(network, account_id, keyPair);
 
-            const near = await nearApi.connect({
+            const near = await nearApi.connect({ 
                 networkId: network,
                 deps: {keyStore},
                 masterAccount: account_id,

@@ -266,7 +266,6 @@ const init = async () => {
         path: '/send_near',
         handler: async (request) => {
             //console.log(request) 
-
             request = processRequest(request);
 
             let {account_id, private_key, seed_phrase, receiver, amount} = request.payload;
