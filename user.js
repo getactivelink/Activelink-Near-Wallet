@@ -50,20 +50,27 @@ module.exports = {
      */
     CreateAccount: async function (new_account) {
         const account = await blockchain.GetMasterAccount();
-        // console.log("asdasfas", account)
-        // return "cre";
-        const res = await account.createAccount(new_account.account_id, new_account.public_key, '200000000000000000000000');
-
+        
         try {
+            const res = await account.createAccount(new_account.account_id, new_account.public_key, '200000000000000000000000');
             if (res['status'].hasOwnProperty('SuccessValue')) {
                 await this.SaveKeyPair(new_account);
-                return true
+                return true;
             }
         } catch (e) {
-            console.log(e);
+            if (e.type === 'AccountAlreadyExists') {
+                // Account already exists, handle it as needed
+               // console.log(`Account ${new_account.account_id} already exists.`);
+                return `Account ${new_account.account_id} already exists.`; // You can choose to return false or throw an error here
+            } else {
+                //console.error(e);
+               // console.log("Other error occurred");
+                return "Other error occurred"; // Handle other errors as needed
+            }
         }
         return false;
     },
+    
 
     GetAccount: async function (account_id) {
         const filename = this.GetFileName(account_id);
