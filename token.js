@@ -5,7 +5,7 @@ const fs = require('fs');
 const settings = JSON.parse(fs.readFileSync(api.CONFIG_PATH, 'utf8'));
 
 module.exports = {
-
+ 
     /**
      * @return {string}
      */
