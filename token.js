@@ -20,7 +20,7 @@ module.exports = {
         } catch (e) {
             return api.reject(e);
         }
-    },
+    }, 
 
     /**
      * @return {string}
