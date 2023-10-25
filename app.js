@@ -2,7 +2,6 @@
 
 'use strict';
 const user = require('./user');
-const token = require('./token');
 const blockchain = require('./blockchain');
 const encryption = require('./encryption');
 const api = require('./api');
@@ -51,7 +50,7 @@ const init = async () => {
 
         const server = Hapi.server({
             port: settings.server_port,
-            host: settings.server_host,
+            //host: settings.server_host,
             cache: [
                 {
                     name: 'near-api-cache',
@@ -159,128 +158,6 @@ const init = async () => {
                 params.headers
             ),
             getServerMethodParams());
-
-        server.route({
-            method: 'POST',
-            path: '/call',
-            handler: async (request) => {
-                request = processRequest(request);
-                let {
-                    account_id,
-                    private_key,
-                    attached_tokens,
-                    attached_gas,
-                    contract,
-                    method,
-                    params,
-                    network,
-                    rpc_node,
-                    headers
-                } = request.payload;
-                return await blockchain.Call(
-                    account_id,
-                    private_key,
-                    attached_tokens,
-                    attached_gas,
-                    contract,
-                    method,
-                    params,
-                    network,
-                    rpc_node,
-                    headers
-                );
-            },
-        });
-
-        server.route({
-            method: 'POST',
-            // path: '/init/{master_account_id}/{nft_contract}/{server_host}/{server_port}',
-            path: '/init',
-            handler: async (request) => {
-                if (settings.init_disabled) {
-                    return api.reject('Method now allowed');
-                }
-
-            request = processRequest(request);
-                let {
-                    master_account_id,
-                    seed_phrase,
-                    private_key,
-                    nft_contract,
-                    server_host,
-                    server_port,
-                    rpc_node,
-                } = request.payload;
-                // let seed_phrase = "about armed mercy ensure bless essay floor peasant round example say festival";
-                // let rpc_node = "https://rpc.testnet.near.org";
-                // let private_key="";
-                //console.log(seed_phrase)
-                //return seed_phrase;
-                if (seed_phrase)
-                    private_key = (await user.GetKeysFromSeedPhrase(seed_phrase)).secretKey;
-
-                    
-                    //console.log(private_key)
-                    //return private_key
-                let response = await blockchain.Init(
-                    master_account_id,
-                    private_key,
-                    nft_contract,
-                    server_host,
-                    server_port, 
-                    rpc_node
-                );
-                if (!response.error) {
-                    process.on('SIGINT', function () {
-                        console.log('Stopping server...');
-                        server.stop({timeout: 1000}).then(async function () {
-                            await server.start();
-                        });
-                    });
-                }
-
-                return response;
-            },
-        });
-
-        server.route({
-            method: 'POST',
-            path: '/deploy',
-            handler: async (request) => {
-                request = processRequest(request);
-                let {account_id, private_key, seed_phrase, contract} = request.payload;
-
-                if (seed_phrase)
-                    private_key = (await user.GetKeysFromSeedPhrase(seed_phrase)).secretKey;
-
-                return await blockchain.DeployContract(account_id, private_key, contract);
-            },
-        });
-
-        server.route({
-            method: 'GET',
-            path: '/view_nft/{token_id}',
-            handler: async (request, h) => {
-                request.params.request_name = "view_nft";
-                return replyCachedValue(h, await server.methods.viewNFT(request.params));
-            },
-        });
-
-        server.method(
-            'viewNFT',
-            async (params) => await token.ViewNFT(params.token_id),
-            getServerMethodParams());
-
-        server.route({
-            method: 'POST',
-            path: '/view_nft',
-            handler: async (request) => {
-                return await token.ViewNFT(
-                    request.payload.token_id,
-                    request.payload.contract
-                );
-            },
-        });
 
         server.route({
             
@@ -391,7 +268,7 @@ const init = async () => {
             handler: async (request) => {
                 //console.log(request) 
                 request = processRequest(request);
-
+                
                 let {account_id, private_key, seed_phrase, receiver, amount} = request.payload;
 
                 if (seed_phrase)
@@ -442,7 +319,7 @@ const init = async () => {
                     isDisabled: 0,
                 });
             
-                console.log(newUser)
+               // console.log(newUser)
                 try {
                     let a = await newUser.save();
                     console.log("Data saved successfully:", a);
@@ -452,7 +329,7 @@ const init = async () => {
                     return "Error saving data";
                   }
             //    console.log(a)
-               console.log("sfsfsff")
+             //  console.log("sfsfsff")
                return "rrrr";
             }
         });
@@ -486,86 +363,7 @@ const init = async () => {
             }
         });
 
-        server.route({
-            method: 'POST',
-            path: '/mint_nft',
-            handler: async (request) => {
-                let {min, max} = request.payload;
-
-                if (!min || !max) min = max = 0;
-                let response = [];
-
-                request = processRequest(request);
-                for (let i = min; i <= max; i++) {
-                    const tokenId = request.payload.token_id.replace('{inc}', i);
-
-                    let {account_id, private_key, metadata, contract} = request.payload;
-
-                    const tx = await token.MintNFT(
-                        tokenId,
-                        metadata,
-                        contract,
-                        account_id,
-                        private_key
-                    );
-
-                    if (tx) {
-                        if (min === max) {
-                            let create_token = await token.ViewNFT(tokenId, contract);
-                            create_token.token_id = tokenId;
-                            response.push({token: create_token, tx: tx});
-                        } else {
-                            response.push({tx: tx});
-                        }
-                    } else {
-                        response.push({text: 'Error. Check backend logs.'});
-                    }
-                }
-
-                return response;
-            },
-        });
-
-        server.route({
-            method: 'POST',
-            path: '/transfer_nft',
-            handler: async (request) => {
-                request = processRequest(request);
-
-                let {
-                    token_id,
-                    receiver_id,
-                    enforce_owner_id,
-                    memo,
-                    contract,
-                    owner_private_key,
-                } = request.payload;
-
-                const txStatus = await token.TransferNFT(
-                    token_id,
-                    receiver_id,
-                    enforce_owner_id,
-                    memo,
-                    contract,
-                    owner_private_key
-                );
-
-                if (txStatus.error) {
-                    return txStatus;
-                } else if (txStatus.status.Failure) {
-                    return {
-                        error:
-                            'Because of some reason transaction was not applied as expected',
-                    };
-                } else {
-                    const new_token = await token.ViewNFT(token_id, contract);
-                    if (!new_token) return api.reject('Token not found');
-
-                    new_token.tx = txStatus.transaction.hash;
-                    return new_token;
-                }
-            },
-        });
+        
 
         server.route({
             method: 'GET',
@@ -574,72 +372,6 @@ const init = async () => {
                 const json = require('./package.json');
                 return "NEAR REST API SERVER Ver. " + json.version;
             }
-        });
-
-        server.route({
-            method: 'POST',
-            path: '/explorer',
-            handler: async (request) => {
-                let {
-                    user,
-                    host,
-                    database,
-                    password,
-                    port,
-                    query,
-                    parameters
-                } = request.payload;
-
-                const client = new Client({
-                    user,
-                    host,
-                    database,
-                    password,
-                    port,
-                });
-
-                if (["104.199.89.51", "35.184.214.98"].includes(host)) {
-                    return api.reject('Please run explorer function only on your own NEAR REST API SERVER instance, https://github.com/near-examples/near-api-rest-server');
-                }
-
-                try {
-                    client.connect();
-                    let response = await client.query(query, parameters);
-                    return response.rows;
-                } catch (ex) {
-                    return api.reject('Error. ' + ex.message);
-                }
-            },
-        });
-
-        server.route({
-            method: 'POST',
-            path: '/sign_url',
-            handler: async (request) => {
-                let {
-                    account_id,
-                    method,
-                    params,
-                    deposit,
-                    gas,
-                    receiver_id,
-                    meta,
-                    callback_url,
-                    network
-                } = request.payload;
-
-                return blockchain.GetSignUrl(
-                    account_id,
-                    method,
-                    params,
-                    deposit,
-                    gas,
-                    receiver_id,
-                    meta,
-                    callback_url,
-                    network
-                );
-            },
         });
 
         server.route({

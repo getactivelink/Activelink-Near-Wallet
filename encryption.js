@@ -15,9 +15,9 @@ function CryptoEncrypt(data) {
 // Crypto Decrypting text
 function CryptoDecrypt(data) {
     try {
-        console.log(data)
+      //  console.log(data)
         var bytes  = CryptoJS.AES.decrypt(data, key);
-        console.log(bytes)
+       // console.log(bytes)
         var decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
         return decryptedData;
     } catch (e) {
